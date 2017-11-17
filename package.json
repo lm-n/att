@@ -1,0 +1,24 @@
+{
+  "name": "att",
+  "version": "1.0.0",
+  "description": "Rethinking the IMA attendance check",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lm-n/att.git"
+  },
+  "author": "Dave and Luis :D",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lm-n/att/issues"
+  },
+  "homepage": "https://github.com/lm-n/att#readme",
+  "dependencies": {
+    "express": "^4.16.2",
+    "google-auth-library": "^0.11.0",
+    "googleapis": "^22.2.0"
+  }
+}
