@@ -7,15 +7,7 @@ readline = require('readline'),
 google = require('googleapis'),
 googleAuth = require('google-auth-library');
 
-
-
-
-var daveID = "21142230523404",
-luisID = "21142229562587";
-
-
-
-
+var netIDsNumberIDs = [];
 
 var SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
@@ -55,15 +47,14 @@ app.get("/api/:id", function(req, res){
   res.header('Access-Control-Allow-Origin', "*");
   var currentID = req.params.id;
   var requestURL = "";
-  /*Request(requestURL, function (error, response, body) {
+  checkDatabase(currentID);
+  Request(requestURL, function (error, response, body) {
     if (!error && response.statusCode == 200) {
-      //console.log(body);
       var theData = JSON.parse(body);
-      //console.log(theData);
       //send all the data
       res.json(theData);
     }
-  });*/
+  });
   res.json("success");
 });
 
@@ -91,15 +82,14 @@ console.log('Express started on port 3000');
 
 
 
-/*
 //load client secrets from a local file.
 fs.readFile("client_secret.json", function processClientSecrets(err, content){
     if(err){
         console.log("Error loading client secret file: " + err);
         return;
     }
-    authorize(JSON.parse(content), doSomeShit);
-});*/
+    authorize(JSON.parse(content), getSheetData);
+});
 
 function authorize(credentials, callback) {
   var clientSecret = credentials.installed.client_secret;
@@ -120,12 +110,12 @@ function authorize(credentials, callback) {
 }
 
 
-function doSomeShit(auth) {
+function getSheetData(auth) {
   var sheets = google.sheets('v4');
   sheets.spreadsheets.values.get({
     auth: auth,
-    spreadsheetId: '1S0jdWWeC9C_3gVxkteeG-Ovj0r5d6q7v5bKvR7p77h8',
-    range: 'AM',
+    spreadsheetId: '1KqcGo_Tt4i8i_iuyX1XHhW_cNNh8yy_XdQLyAMt9e6Y',
+    range: 'attendance system!B2:C1000',
   }, function(err, response) {
     if (err) {
       console.log('The API returned an error: ' + err);
@@ -137,10 +127,21 @@ function doSomeShit(auth) {
     } else {
       for (var i = 0; i < rows.length; i++) {
         var row = rows[i];
-        if(row[0] == "dss441"){
-            console.log("do something");
-        }
+        netIDsNumberIDs.push(new netIDnumberID(row[0], row[1]));
       }
     }
   });
+}
+
+function netIDnumberID(netID, numberID){
+  this.netID = netID;
+  this.numberID = numberID;
+}
+
+function checkDatabase(currentID){
+  for(var i = 0; i < netIDsNumberIDs.length; i++){
+    if (currentID == netIDsNumberIDs[i].numberID){
+      console.log("Houston we have a match");
+    }
+  }
 }

@@ -19,28 +19,28 @@ function sendData(id){
 	});
 }
 
+
 JOB.StreamCallback = function(result) {
 	if(result.length > 0){
 		var tempArray = [];
 		for(var i = 0; i < result.length; i++) {
 			tempArray.push(result[i].Format+" : "+result[i].Value);
 			//2114 2229 5625 87
-			number= result[i].Value; 
+			number= result[i].Value;
 			if (number.toString().length == 14){
 				Result.innerHTML=tempArray.join("<br />");
 				StopDecode();
 				sendData(number);
-				//send it over 
+				//send it over
 			}
 		}
 	}
 };
-			
 
 JOB.SetLocalizationCallback(function(result) {
 	localized = result;
 });
-			
+
 JOB.SwitchLocalizationFeedback(true);
 c = document.getElementById("videoCanvas");
 ctx = c.getContext("2d");
@@ -56,13 +56,13 @@ function draw() {
 				ctx.lineWIdth = "2";
 				ctx.strokeStyle="red";
 				for(var i = 0; i < localized.length; i++) {
-					ctx.rect(localized[i].x,localized[i].y,localized[i].width,localized[i].height); 
+					ctx.rect(localized[i].x,localized[i].y,localized[i].width,localized[i].height);
 				}
 				ctx.stroke();
 			}
     	setTimeout(draw,20);
     }
-    			
+
     catch (e) {
     	if (e.name == "NS_ERROR_NOT_AVAILABLE") {
       		setTimeout(draw,20);
@@ -82,7 +82,7 @@ if (navigator.getUserMedia) {
    	navigator.getUserMedia (
       	{
         	video: true,
-         	audio: true
+         	audio: false
       	},
       	function(localMediaStream) {
          	video.src = window.URL.createObjectURL(localMediaStream);
@@ -97,12 +97,12 @@ if (navigator.getUserMedia) {
 } else {
    	console.log("getUserMedia not supported");
 }
-			
+
 function Decode() {
 	if(!streaming) return;
 	JOB.DecodeStream(video);
 }
-			
+
 function StopDecode() {
 	console.log("stopdecode")
 	JOB.StopStreamDecode();
