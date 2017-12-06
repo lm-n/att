@@ -143,7 +143,7 @@ function getSheetData(auth) {
       //them and also the number IDs all at one from the attendance dataBase.
       for (var i = 0; i < attendanceDatabase.length; i++) {
         var row = attendanceDatabase[i];
-        netIDs_numberIDs.push(new netIDNumberIDPair(row[0], row[1]));
+        netIDs_numberIDs.push(new netIDNumberIDPairs(row[0], row[1]));
         netIDs_checks.push(new netIDCheckPair(row[0],""));
         initialNetIDPopulation.values.push([row[0], ""]);
         authorize(client_secrets, netIDSheetPopulation);
@@ -208,7 +208,7 @@ function netIDCheckPair(netID, check){
   this.check = check;
 }
 
-function netIDnumberIDPair(netID, numberID){
+function netIDNumberIDPairs(netID, numberID){
   this.netID = netID;
   this.numberID = numberID;
 }
