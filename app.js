@@ -58,22 +58,19 @@ app.get("/api/:id", function(req, res){
   res.header('Access-Control-Allow-Origin', "*");
   var currentID = req.params.id;
   var requestURL = "";
-
-
-
   var inDatabase =  checkDatabase(currentID);
+  updatedNetIDCheckPairs.values = [];
   if(inDatabase != false){
-    updatedNetIDCheckPairs.values = [];
     for( var i = 0; i < netIDsChecks.length; i++){
       updatedNetIDCheckPairs.values.push([netIDsChecks[i].netID, netIDsChecks[i].check]);
-      console.log(updatedNetIDCheckPairs.values);
     }
+    console.log(updatedNetIDCheckPairs.values);
+
     authorize(client_secrets, updateSheetData);
     console.log("added");
   }else{
     console.log("Not in attendance database, ask student to submit form");
   }
-
   Request(requestURL, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       var theData = JSON.parse(body);
@@ -92,8 +89,6 @@ app.get("*", function(req, res){
 // Start the server
 app.listen(3000);
 console.log('Express started on port 3000');
-
-
 
 //load client secrets from a local file.
 fs.readFile("client_secret.json", function processClientSecrets(err, content){
@@ -134,8 +129,8 @@ function getSheetData(auth) {
     spreadsheetId: spreadsheetId,
     ranges: ranges,
   }, function(err, response) {
+    //get all sheet data from the attendance database
     var attendanceDatabase = response.valueRanges[0].values;
-    var attendanceCheckSheet = response.valueRanges[1].values;
     if (err) {
       console.log('The API returned an error: ' + err);
       return;
@@ -144,25 +139,20 @@ function getSheetData(auth) {
     if (attendanceDatabase.length == 0) {
       console.log('No data found.');
     } else {
-
       //Populate the attendance sheet with netIDs, no x's yet
       for (var i = 0; i < attendanceDatabase.length; i++) {
         var row = attendanceDatabase[i];
         netIDsNumberIDs.push(new netIDnumberIDpair(row[0], row[1]));
+        netIDsChecks.push(new netIDCheckPair(row[0],""));
         initialNetIDPopulation.values.push([row[0], ""]);
         authorize(client_secrets, netIDSheetPopulation);
-      }
-      if (attendanceCheckSheet != undefined){
-        for (var i = 0; i < attendanceCheckSheet.length; i++){
-          var row = attendanceCheckSheet[i];
-          netIDsChecks.push(new netIDCheckPair(row[0], ""));
-        }
       }
       console.log(netIDsChecks);
     }
   });
 }
 
+//for the initial population of the attendance sheet
 function netIDSheetPopulation(auth){
   var sheets = google.sheets('v4');
   sheets.spreadsheets.values.update({
@@ -198,6 +188,7 @@ function updateSheetData(auth){
 }
 
 function checkDatabase(currentID){
+  console.log(netIDsNumberIDs);
   for(var i = 0; i < netIDsNumberIDs.length; i++){
     if (currentID == netIDsNumberIDs[i].numberID){
       netIDsChecks[i].check = "x";
