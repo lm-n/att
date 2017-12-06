@@ -7,17 +7,18 @@ readline = require('readline'),
 google = require('googleapis'),
 googleAuth = require('google-auth-library');
 
-var netIDsNumberIDs = [];
-var netIDsChecks = [];
-var values = [];
-var client_secrets;
 var spreadsheetId = "1KqcGo_Tt4i8i_iuyX1XHhW_cNNh8yy_XdQLyAMt9e6Y";
-
-var body = {
-  values: values
-};
-
 var ranges = ['attendance system!B2:C1000', 'attendance checks!A2:B200'];
+
+var netIDsNumberIDs = [], netIDsChecks = [];
+
+var initialNetIDPopulation = {
+  values: values = []
+}
+var updatedNetIDCheckPairs = {
+  values: values = []
+}
+
 
 var SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
@@ -62,10 +63,10 @@ app.get("/api/:id", function(req, res){
 
   var inDatabase =  checkDatabase(currentID);
   if(inDatabase != false){
-    body.values = [];
+    updatedNetIDCheckPairs.values = [];
     for( var i = 0; i < netIDsChecks.length; i++){
-      body.values.push([netIDsChecks[i].netID, netIDsChecks[i].check]);
-      console.log(values);
+      updatedNetIDCheckPairs.values.push([netIDsChecks[i].netID, netIDsChecks[i].check]);
+      console.log(updatedNetIDCheckPairs.values);
     }
     authorize(client_secrets, updateSheetData);
     console.log("added");
@@ -133,32 +134,28 @@ function getSheetData(auth) {
     spreadsheetId: spreadsheetId,
     ranges: ranges,
   }, function(err, response) {
-    var attendanceSheet = response.valueRanges[0].values;
-    var attendanceCheck = response.valueRanges[1].values; //delete this soon
+    var attendanceDatabase = response.valueRanges[0].values;
+    var attendanceCheckSheet = response.valueRanges[1].values;
     if (err) {
       console.log('The API returned an error: ' + err);
       return;
     }
 
-    if (attendanceSheet.length == 0) {
+    if (attendanceDatabase.length == 0) {
       console.log('No data found.');
     } else {
 
       //Populate the attendance sheet with netIDs, no x's yet
-      for (var i = 0; i < attendanceSheet.length; i++) {
-        var row = attendanceSheet[i];
+      for (var i = 0; i < attendanceDatabase.length; i++) {
+        var row = attendanceDatabase[i];
         netIDsNumberIDs.push(new netIDnumberIDpair(row[0], row[1]));
-        values.push([row[0], ""]);
+        initialNetIDPopulation.values.push([row[0], ""]);
         authorize(client_secrets, netIDSheetPopulation);
       }
-
-      values = [];
-
-
-      if (attendanceCheck != undefined){
-        for (var i = 0; i < attendanceCheck.length; i++){
-          var row = attendanceCheck[i];
-          netIDsChecks.push(new netIDCheckPair(row[0], " "));
+      if (attendanceCheckSheet != undefined){
+        for (var i = 0; i < attendanceCheckSheet.length; i++){
+          var row = attendanceCheckSheet[i];
+          netIDsChecks.push(new netIDCheckPair(row[0], ""));
         }
       }
       console.log(netIDsChecks);
@@ -173,7 +170,7 @@ function netIDSheetPopulation(auth){
     auth: auth,
     range: 'attendance checks!A2:B',
     valueInputOption: "RAW",
-    resource: body
+    resource: initialNetIDPopulation
   }, function(err, result){
     if(err){
       console.log(err);
@@ -184,14 +181,13 @@ function netIDSheetPopulation(auth){
 }
 
 function updateSheetData(auth){
-  console.log(body);
   var sheets = google.sheets('v4');
   sheets.spreadsheets.values.update({
     spreadsheetId: spreadsheetId,
     auth: auth,
     range: 'attendance checks!A2:B',
     valueInputOption: "RAW",
-    resource: body
+    resource: updatedNetIDCheckPairs
   }, function(err, result){
     if(err){
       console.log(err);
@@ -201,12 +197,11 @@ function updateSheetData(auth){
   })
 }
 
-
 function checkDatabase(currentID){
   for(var i = 0; i < netIDsNumberIDs.length; i++){
     if (currentID == netIDsNumberIDs[i].numberID){
       netIDsChecks[i].check = "x";
-      return netIDsNumberIDs[i].netID;
+      return true;
     }
   }
   return false;
