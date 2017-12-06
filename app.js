@@ -10,7 +10,7 @@ googleAuth = require('google-auth-library');
 var spreadsheetId = "1KqcGo_Tt4i8i_iuyX1XHhW_cNNh8yy_XdQLyAMt9e6Y";
 var ranges = ['attendance system!B2:C1000', 'attendance checks!A2:B200'];
 
-var netIDsNumberIDs = [], netIDsChecks = [];
+var netIDs_numberIDs = [], netIDs_checks = [];
 
 var initialNetIDPopulation = {
   values: values = []
@@ -62,8 +62,8 @@ app.get("/api/:id", function(req, res){
 
   updatedNetIDCheckPairs.values = [];
   if(inDatabase != false){
-    for( var i = 0; i < netIDsChecks.length; i++){
-      updatedNetIDCheckPairs.values.push([netIDsChecks[i].netID, netIDsChecks[i].check]);
+    for( var i = 0; i < netIDs_checks.length; i++){
+      updatedNetIDCheckPairs.values.push([netIDs_checks[i].netID, netIDs_checks[i].check]);
     }
     console.log(updatedNetIDCheckPairs.values);
     authorize(client_secrets, updateSheetData);
@@ -143,12 +143,12 @@ function getSheetData(auth) {
       //them and also the number IDs all at one from the attendance dataBase.
       for (var i = 0; i < attendanceDatabase.length; i++) {
         var row = attendanceDatabase[i];
-        netIDsNumberIDs.push(new netIDNumberIDPair(row[0], row[1]));
-        netIDsChecks.push(new netIDCheckPair(row[0],""));
+        netIDs_numberIDs.push(new netIDNumberIDPair(row[0], row[1]));
+        netIDs_checks.push(new netIDCheckPair(row[0],""));
         initialNetIDPopulation.values.push([row[0], ""]);
         authorize(client_secrets, netIDSheetPopulation);
       }
-      console.log(netIDsChecks);
+      console.log(netIDs_checks);
     }
   });
 }
@@ -193,10 +193,10 @@ function updateSheetData(auth){
 //formatted as a 14 digit number formated like so: 88888888888888
 //if they are, then you place an 'x' in the check member of the netIDCheckPair
 function checkDatabase(currentID){
-  console.log(netIDsNumberIDs);
-  for(var i = 0; i < netIDsNumberIDs.length; i++){
-    if (currentID == netIDsNumberIDs[i].numberID){
-      netIDsChecks[i].check = "x";
+  console.log(netIDs_numberIDs);
+  for(var i = 0; i < netIDs_numberIDs.length; i++){
+    if (currentID == netIDs_numberIDs[i].numberID){
+      netIDs_checks[i].check = "x";
       return true;
     }
   }
