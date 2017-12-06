@@ -59,13 +59,13 @@ app.get("/api/:id", function(req, res){
   var currentID = req.params.id;
   var requestURL = "";
   var inDatabase =  checkDatabase(currentID);
+
   updatedNetIDCheckPairs.values = [];
   if(inDatabase != false){
     for( var i = 0; i < netIDsChecks.length; i++){
       updatedNetIDCheckPairs.values.push([netIDsChecks[i].netID, netIDsChecks[i].check]);
     }
     console.log(updatedNetIDCheckPairs.values);
-
     authorize(client_secrets, updateSheetData);
     console.log("added");
   }else{
@@ -121,7 +121,8 @@ function authorize(credentials, callback) {
   });
 }
 
-
+//Initial grab of the sheet data only done on server initialization
+//sheet data is not expected to be grabbed again while the server is up
 function getSheetData(auth) {
   var sheets = google.sheets('v4');
   sheets.spreadsheets.values.batchGet({
@@ -135,14 +136,14 @@ function getSheetData(auth) {
       console.log('The API returned an error: ' + err);
       return;
     }
-
-    if (attendanceDatabase.length == 0) {
+    if (attendanceDatabase == undefined) {
       console.log('No data found.');
     } else {
-      //Populate the attendance sheet with netIDs, no x's yet
+      //The netIDs are the most important bit here, and we can just grab
+      //them and also the number IDs all at one from the attendance dataBase.
       for (var i = 0; i < attendanceDatabase.length; i++) {
         var row = attendanceDatabase[i];
-        netIDsNumberIDs.push(new netIDnumberIDpair(row[0], row[1]));
+        netIDsNumberIDs.push(new netIDNumberIDPair(row[0], row[1]));
         netIDsChecks.push(new netIDCheckPair(row[0],""));
         initialNetIDPopulation.values.push([row[0], ""]);
         authorize(client_secrets, netIDSheetPopulation);
@@ -170,6 +171,7 @@ function netIDSheetPopulation(auth){
   })
 }
 
+//update the sheet after initial population
 function updateSheetData(auth){
   var sheets = google.sheets('v4');
   sheets.spreadsheets.values.update({
@@ -187,6 +189,9 @@ function updateSheetData(auth){
   })
 }
 
+//check if the student is in the database via their number ID
+//formatted as a 14 digit number formated like so: 88888888888888
+//if they are, then you place an 'x' in the check member of the netIDCheckPair
 function checkDatabase(currentID){
   console.log(netIDsNumberIDs);
   for(var i = 0; i < netIDsNumberIDs.length; i++){
@@ -203,7 +208,7 @@ function netIDCheckPair(netID, check){
   this.check = check;
 }
 
-function netIDnumberIDpair(netID, numberID){
+function netIDnumberIDPair(netID, numberID){
   this.netID = netID;
   this.numberID = numberID;
 }
