@@ -8,8 +8,18 @@ google = require('googleapis'),
 googleAuth = require('google-auth-library');
 
 var netIDsNumberIDs = [];
+var netIDsChecks = [];
+var values = [];
+var client_secrets;
+var spreadsheetId = "1KqcGo_Tt4i8i_iuyX1XHhW_cNNh8yy_XdQLyAMt9e6Y";
 
-var SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
+var body = {
+  values: values
+};
+
+var ranges = ['attendance system!B2:C1000', 'attendance checks!A2:B200'];
+
+var SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
     process.env.USERPROFILE) + '/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs-quickstart.json';
@@ -47,7 +57,22 @@ app.get("/api/:id", function(req, res){
   res.header('Access-Control-Allow-Origin', "*");
   var currentID = req.params.id;
   var requestURL = "";
-  checkDatabase(currentID);
+
+
+
+  var inDatabase =  checkDatabase(currentID);
+  if(inDatabase != false){
+    body.values = [];
+    for( var i = 0; i < netIDsChecks.length; i++){
+      body.values.push([netIDsChecks[i].netID, netIDsChecks[i].check]);
+      console.log(values);
+    }
+    authorize(client_secrets, updateSheetData);
+    console.log("added");
+  }else{
+    console.log("Not in attendance database, ask student to submit form");
+  }
+
   Request(requestURL, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       var theData = JSON.parse(body);
@@ -69,27 +94,17 @@ console.log('Express started on port 3000');
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 //load client secrets from a local file.
 fs.readFile("client_secret.json", function processClientSecrets(err, content){
     if(err){
         console.log("Error loading client secret file: " + err);
         return;
     }
+    client_secrets = JSON.parse(content);
     authorize(JSON.parse(content), getSheetData);
 });
+
+
 
 function authorize(credentials, callback) {
   var clientSecret = credentials.installed.client_secret;
@@ -102,6 +117,7 @@ function authorize(credentials, callback) {
   fs.readFile(TOKEN_PATH, function(err, token) {
     if (err) {
       getNewToken(oauth2Client, callback);
+      console.log("error");
     } else {
       oauth2Client.credentials = JSON.parse(token);
       callback(oauth2Client);
@@ -112,36 +128,96 @@ function authorize(credentials, callback) {
 
 function getSheetData(auth) {
   var sheets = google.sheets('v4');
-  sheets.spreadsheets.values.get({
+  sheets.spreadsheets.values.batchGet({
     auth: auth,
-    spreadsheetId: '1KqcGo_Tt4i8i_iuyX1XHhW_cNNh8yy_XdQLyAMt9e6Y',
-    range: 'attendance system!B2:C1000',
+    spreadsheetId: spreadsheetId,
+    ranges: ranges,
   }, function(err, response) {
+    var attendanceSheet = response.valueRanges[0].values;
+    var attendanceCheck = response.valueRanges[1].values; //delete this soon
     if (err) {
       console.log('The API returned an error: ' + err);
       return;
     }
-    var rows = response.values;
-    if (rows.length == 0) {
+
+    if (attendanceSheet.length == 0) {
       console.log('No data found.');
     } else {
-      for (var i = 0; i < rows.length; i++) {
-        var row = rows[i];
-        netIDsNumberIDs.push(new netIDnumberID(row[0], row[1]));
+
+      //Populate the attendance sheet with netIDs, no x's yet
+      for (var i = 0; i < attendanceSheet.length; i++) {
+        var row = attendanceSheet[i];
+        netIDsNumberIDs.push(new netIDnumberIDpair(row[0], row[1]));
+        values.push([row[0], ""]);
+        authorize(client_secrets, netIDSheetPopulation);
       }
+
+      values = [];
+
+
+      if (attendanceCheck != undefined){
+        for (var i = 0; i < attendanceCheck.length; i++){
+          var row = attendanceCheck[i];
+          netIDsChecks.push(new netIDCheckPair(row[0], " "));
+        }
+      }
+      console.log(netIDsChecks);
     }
   });
 }
 
-function netIDnumberID(netID, numberID){
-  this.netID = netID;
-  this.numberID = numberID;
+function netIDSheetPopulation(auth){
+  var sheets = google.sheets('v4');
+  sheets.spreadsheets.values.update({
+    spreadsheetId: spreadsheetId,
+    auth: auth,
+    range: 'attendance checks!A2:B',
+    valueInputOption: "RAW",
+    resource: body
+  }, function(err, result){
+    if(err){
+      console.log(err);
+    }else{
+      console.log("Cells have been updated.");
+    }
+  })
 }
+
+function updateSheetData(auth){
+  console.log(body);
+  var sheets = google.sheets('v4');
+  sheets.spreadsheets.values.update({
+    spreadsheetId: spreadsheetId,
+    auth: auth,
+    range: 'attendance checks!A2:B',
+    valueInputOption: "RAW",
+    resource: body
+  }, function(err, result){
+    if(err){
+      console.log(err);
+    }else{
+      console.log("Cells have been updated.");
+    }
+  })
+}
+
 
 function checkDatabase(currentID){
   for(var i = 0; i < netIDsNumberIDs.length; i++){
     if (currentID == netIDsNumberIDs[i].numberID){
-      console.log("Houston we have a match");
+      netIDsChecks[i].check = "x";
+      return netIDsNumberIDs[i].netID;
     }
   }
+  return false;
+}
+
+function netIDCheckPair(netID, check){
+  this.netID = netID;
+  this.check = check;
+}
+
+function netIDnumberIDpair(netID, numberID){
+  this.netID = netID;
+  this.numberID = numberID;
 }
